@@ -1,0 +1,5 @@
+data <- read.csv("./activity.csv")
+data$date <- as.Date(data$date)
+data$steps <- as.numeric(as.character(data$steps))
+data$interval <- as.numeric(as.character(data$interval))
+head(data)
