@@ -68,7 +68,38 @@ head(steps_sum)
 
 
 ## What is mean total number of steps taken per day?
+We can now create a histogram that plot the steps per day.
 
+```r
+ggplot(steps_sum, aes(x = as.Date(row.names(steps_sum)), y = steps_sum$steps)) + 
+    geom_histogram(stat = "identity") + labs(title = "Steps Sum", y = "Steps", 
+    x = "Days") + theme(plot.title = element_text(size = 20, lineheight = 0.8, 
+    face = "bold"))
+```
+
+![plot of chunk unnamed-chunk-4](figure/unnamed-chunk-4.png) 
+
+We can proceed calculating the mean of the steps:
+
+```r
+steps_mean <- mean(steps_sum$steps)
+steps_mean
+```
+
+```
+## [1] 9354
+```
+
+And the median of the steps:
+
+```r
+steps_median <- median(steps_sum$steps)
+steps_median
+```
+
+```
+## [1] 10395
+```
 
 
 ## What is the average daily activity pattern?
