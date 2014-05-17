@@ -3,23 +3,16 @@
 
 ## Loading and preprocessing the data
 
-The first thing to do is to import the library that we'll need in this analysis.
-
-```r
-library(ggplot2)
-```
-
-
-We can now start to open the csv file, convert it to a data.frame and preprocess the data in order to have a tidy and useful dataset.
+We can start to open the csv file, convert it to a data.frame and preprocess the data in order to have a tidy and useful dataset.
 
 ```r
 # open the dataset
-dataset <- read.csv("./activity.csv")
+table <- read.csv("./activity.csv")
 # convertions
-dataset$date <- as.Date(dataset$date)
-dataset$steps <- as.numeric(as.character(dataset$steps))
-dataset$interval <- as.numeric(as.character(dataset$interval))
-head(dataset)
+table$date <- as.Date(table$date)
+table$steps <- as.numeric(as.character(table$steps))
+table$interval <- as.numeric(as.character(table$interval))
+head(table)
 ```
 
 ```
@@ -34,35 +27,33 @@ head(dataset)
 
 ```r
 # preprocessing
-steps_sum <- as.data.frame(tapply(dataset$steps, dataset$date, sum, na.rm = TRUE))
-colnames(steps_sum)[1] <- "steps"
+steps_date <- aggregate(steps ~ date, data = table, FUN = sum)
 ```
 
 We now have a tidy and simple dataset to analize:
 
 ```r
-str(steps_sum)
+str(steps_date)
 ```
 
 ```
-## 'data.frame':	61 obs. of  1 variable:
-##  $ steps: num [1:61(1d)] 0 126 11352 12116 13294 ...
-##   ..- attr(*, "dimnames")=List of 1
-##   .. ..$ : chr  "2012-10-01" "2012-10-02" "2012-10-03" "2012-10-04" ...
+## 'data.frame':	53 obs. of  2 variables:
+##  $ date : Date, format: "2012-10-02" "2012-10-03" ...
+##  $ steps: num  126 11352 12116 13294 15420 ...
 ```
 
 ```r
-head(steps_sum)
+head(steps_date)
 ```
 
 ```
-##            steps
-## 2012-10-01     0
-## 2012-10-02   126
-## 2012-10-03 11352
-## 2012-10-04 12116
-## 2012-10-05 13294
-## 2012-10-06 15420
+##         date steps
+## 1 2012-10-02   126
+## 2 2012-10-03 11352
+## 3 2012-10-04 12116
+## 4 2012-10-05 13294
+## 5 2012-10-06 15420
+## 6 2012-10-07 11015
 ```
 
 
@@ -71,43 +62,177 @@ head(steps_sum)
 We can now create a histogram that plot the steps per day.
 
 ```r
-ggplot(steps_sum, aes(x = as.Date(row.names(steps_sum)), y = steps_sum$steps)) + 
-    geom_histogram(stat = "identity") + labs(title = "Steps Sum", y = "Steps", 
-    x = "Days") + theme(plot.title = element_text(size = 20, lineheight = 0.8, 
-    face = "bold"))
+barplot(steps_date$steps, names.arg = steps_date$date, xlab = "Date", ylab = "Steps")
 ```
 
-![plot of chunk unnamed-chunk-4](figure/unnamed-chunk-4.png) 
+![plot of chunk unnamed-chunk-3](figure/unnamed-chunk-3.png) 
 
 We can proceed calculating the mean of the steps:
 
 ```r
-steps_mean <- mean(steps_sum$steps)
+steps_mean <- mean(steps_date$steps)
 steps_mean
 ```
 
 ```
-## [1] 9354
+## [1] 10766
 ```
 
 And the median of the steps:
 
 ```r
-steps_median <- median(steps_sum$steps)
+steps_median <- median(steps_date$steps)
 steps_median
 ```
 
 ```
-## [1] 10395
+## [1] 10765
 ```
 
 
-## What is the average daily activity pattern?
+## What is the average daily table pattern?
+
+Now let's make a time series plot (i.e. type = "l") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all days (y-axis)
+
+
+```r
+steps_data <- aggregate(steps ~ interval, data = table, FUN = mean)
+plot(steps_data, type = "l", xlab = "Interval", ylab = "Steps")
+```
+
+![plot of chunk unnamed-chunk-6](figure/unnamed-chunk-6.png) 
+
+
+Which 5-minute interval, on average across all the days in the dataset,
+contains the maximum number of steps?
+
+
+```r
+steps_data$interval[which.max(steps_data$steps)]
+```
+
+```
+## [1] 835
+```
 
 
 
 ## Imputing missing values
+Note that there are a number of days/intervals where there are missing values (coded as NA). The presence of missing days may introduce bias into some calculations or summaries of the data.
+
+Calculate and report the total number of missing values in the dataset
 
 
+```r
+sum(is.na(table))
+```
 
-## Are there differences in activity patterns between weekdays and weekends?
+```
+## [1] 2304
+```
+
+
+Devise a strategy for filling in all of the missing values in the dataset.
+The strategy does not need to be sophisticated. For example, you could use
+the mean/median for that day, or the mean for that 5-minute interval, etc.
+
+I will use the means for the 5-minute intervals as fillers for missing
+values.
+
+Create a new dataset that is equal to the original dataset but with
+the missing data filled in.
+
+
+```r
+table <- merge(table, steps_data, by = "interval", suffixes = c("", ".y"))
+na <- is.na(table$steps)
+table$steps[na] <- table$steps.y[na]
+table <- table[, c(1:3)]
+```
+
+
+Make a histogram of the total number of steps taken each day and Calculate
+and report the **mean** and **median** total number of steps taken per day.
+Do these values differ from the estimates from the first part of the assignment?
+What is the impact of imputing missing data on the estimates of the total
+daily number of steps?
+
+
+```r
+steps_date <- aggregate(steps ~ date, data = table, FUN = sum)
+barplot(steps_date$steps, names.arg = steps_date$date, xlab = "Date", ylab = "Steps")
+```
+
+![plot of chunk unnamed-chunk-10](figure/unnamed-chunk-10.png) 
+
+```r
+mean(steps_date$steps)
+```
+
+```
+## [1] 10766
+```
+
+```r
+median(steps_date$steps)
+```
+
+```
+## [1] 10766
+```
+
+
+## Are there differences in table patterns between weekdays and weekends?
+
+Create a new factor variable in the dataset with two levels -- "weekday" and
+"weekend" indicating whether a given date is a weekday or weekend day.
+
+
+```r
+Sys.setlocale("LC_TIME", "en_US")
+```
+
+```
+## [1] "en_US"
+```
+
+```r
+dayOfWeek <- function(date) {
+    if (weekdays(as.Date(date)) %in% c("Saturday", "Sunday")) {
+        "weekend"
+    } else {
+        "weekday"
+    }
+}
+table$dayOfWeek <- as.factor(sapply(table$date, dayOfWeek))
+head(table)
+```
+
+```
+##   interval steps       date dayOfWeek
+## 1        0 1.717 2012-10-01   weekday
+## 2        0 0.000 2012-11-23   weekday
+## 3        0 0.000 2012-10-28   weekend
+## 4        0 0.000 2012-11-06   weekday
+## 5        0 0.000 2012-11-24   weekend
+## 6        0 0.000 2012-11-15   weekday
+```
+
+
+Make a panel plot containing a time series plot of the 5-minute interval (x-axis)
+and the average number of steps taken, averaged across all weekday days or
+weekend days (y-axis).
+
+
+```r
+par(mfrow = c(2, 1))
+steps_type <- aggregate(steps ~ interval, data = table, subset = table$dayOfWeek == 
+    "weekend", FUN = mean)
+plot(steps_type, main = "weekend", type = "l", xlab = "Interval", ylab = "Steps")
+steps_type <- aggregate(steps ~ interval, data = table, subset = table$dayOfWeek == 
+    "weekday", FUN = mean)
+plot(steps_type, main = "weekday", type = "l", xlab = "Interval", ylab = "Steps")
+```
+
+![plot of chunk unnamed-chunk-12](figure/unnamed-chunk-12.png) 
+
